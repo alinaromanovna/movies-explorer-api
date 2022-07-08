@@ -23,6 +23,7 @@ module.exports.updateUser = (req, res, next) => {
     .orFail(() => new NotFoundError('Пользователь по указанному _id не найден'))
     .then((user) => {
       res.status(200).send(user);
+      console.log(user);
     })
     .catch((err) => {
       if (err.name === 'ValidationError') {
@@ -63,6 +64,7 @@ module.exports.createUser = (req, res, next) => {
 module.exports.login = (req, res, next) => {
   const { email, password } = req.body;
   User.findOne({ email })
+    .select('+password')
     .orFail(() => new UnauthorizedError('Неправильная почта или пароль!'))
     .then((user) => {
       bcrypt.compare(password, user.password)
