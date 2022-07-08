@@ -17,7 +17,7 @@ module.exports.getUsersMe = (req, res, next) => {
 
 module.exports.updateUser = (req, res, next) => {
   const { email, name } = req.body;
-  User.findByIdAndUpdate(req.params._id, { name, email }, { new: true, runValidators: true })
+  User.findByIdAndUpdate(req.user._id, { name, email }, { new: true, runValidators: true })
     .orFail(() => new NotFoundError('Пользователь по указанному _id не найден'))
     .then((user) => {
       res.status(200).send(user);
@@ -42,7 +42,11 @@ module.exports.createUser = (req, res, next) => {
       password: hash,
     }))
     .then((user) => {
-      res.status(201).send(user);
+      res.status(201).send({
+        name: user.name,
+        email: user.email,
+        _id: user._id,
+      });
     })
     .catch((err) => {
       if (err.code === 11000) {
