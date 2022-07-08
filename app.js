@@ -23,8 +23,10 @@ mongoose.connect(BAZA_MOVIES)
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+
 app.use(requestLogger); // подключаем логгер запросов
-app.use(routes);
+
+app.use('/', routes);
 
 app.use(errorLogger); // подключаем логгер ошибок
 app.use(errors()); // обработчик ошибок celebrate
