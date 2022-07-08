@@ -10,7 +10,7 @@ const { requestLogger, errorLogger } = require('./middlewares/logger');
 
 const { PORT = 3000 } = process.env;
 const { BAZA_MOVIES } = require('./utils/config');
-const { routes } = require('./routes/index');
+const routes = require('./routes/index');
 
 const app = express();
 
