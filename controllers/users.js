@@ -7,6 +7,8 @@ const NotFoundError = require('../errors/not_found');
 const BadRequestError = require('../errors/bad_request');
 const ConflictError = require('../errors/conflict');
 
+const { NODE_ENV, JWT_SECRET } = process.env;
+
 module.exports.getUsersMe = (req, res, next) => {
   User.findById(req.params._id)
     .then((user) => {
@@ -70,7 +72,7 @@ module.exports.login = (req, res, next) => {
           }
           const token = jwt.sign(
             { _id: user._id },
-            'some-secret-key',
+            NODE_ENV !== 'production' ? 'dev-secret' : JWT_SECRET,
             { expiresIn: '7d' },
           );
           res.status(200).send({ token });
