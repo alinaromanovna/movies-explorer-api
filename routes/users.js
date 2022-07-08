@@ -10,7 +10,7 @@ router.patch(
     body: Joi.object().keys({
       email: Joi.string().email().required(),
       name: Joi.string().min(2).max(30).required(),
-      // password: Joi.string().min(8).required(),
+      password: Joi.string().min(8).required(),
     }),
   }),
   updateUser,

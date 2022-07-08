@@ -10,9 +10,9 @@ const ConflictError = require('../errors/conflict');
 const { NODE_ENV, JWT_SECRET } = process.env;
 
 module.exports.getUsersMe = (req, res, next) => {
-  User.findById(req.params._id)
+  User.findById(req.user._id)
     .then((user) => {
-      res.status(200).send(user);
+      res.status(200).send({ email: user.email, name: user.name });
     })
     .catch(next);
 };
@@ -23,7 +23,6 @@ module.exports.updateUser = (req, res, next) => {
     .orFail(() => new NotFoundError('Пользователь по указанному _id не найден'))
     .then((user) => {
       res.status(200).send(user);
-      console.log(user);
     })
     .catch((err) => {
       if (err.name === 'ValidationError') {
