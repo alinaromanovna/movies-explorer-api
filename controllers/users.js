@@ -8,6 +8,7 @@ const BadRequestError = require('../errors/bad_request');
 const ConflictError = require('../errors/conflict');
 
 const { NODE_ENV, JWT_SECRET } = process.env;
+const { JWT_KEY } = require('../utils/config');
 
 module.exports.getUsersMe = (req, res, next) => {
   User.findById(req.user._id)
@@ -19,19 +20,28 @@ module.exports.getUsersMe = (req, res, next) => {
 
 module.exports.updateUser = (req, res, next) => {
   const { email, name } = req.body;
-  User.findByIdAndUpdate(req.user._id, { name, email }, { new: true, runValidators: true })
-    .orFail(() => new NotFoundError('Пользователь по указанному _id не найден'))
-    .then((user) => {
-      res.status(200).send(user);
-    })
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        next(new BadRequestError('Введены некорректные данные для обновления профиля'));
-      } else if (err.name === 'CastError') {
-        next(new BadRequestError('Передан некорректный _id'));
+  User.findOne({ email })
+    .then((data) => {
+      if (data) {
+        next(new ConflictError('Пользователь с такой почтой уже существует'));
       }
-      next(err);
-    });
+      return User.findByIdAndUpdate(
+        req.user._id,
+        { name, email },
+        { new: true, runValidators: true },
+      )
+        .orFail(() => new NotFoundError('Пользователь по указанному _id не найден'))
+        .then((user) => {
+          res.status(200).send(user);
+        })
+        .catch((err) => {
+          if (err.name === 'ValidationError') {
+            next(new BadRequestError('Введены некорректные данные для обновления профиля'));
+          }
+          next(err);
+        });
+    })
+    .catch(next);
 };
 
 module.exports.createUser = (req, res, next) => {
@@ -73,7 +83,7 @@ module.exports.login = (req, res, next) => {
           }
           const token = jwt.sign(
             { _id: user._id },
-            NODE_ENV !== 'production' ? 'dev-secret' : JWT_SECRET,
+            NODE_ENV !== 'production' ? JWT_KEY : JWT_SECRET,
             { expiresIn: '7d' },
           );
           res.status(200).send({ token });
