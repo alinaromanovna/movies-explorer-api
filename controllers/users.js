@@ -23,7 +23,7 @@ module.exports.updateUser = (req, res, next) => {
   User.findOne({ email })
     .then((data) => {
       if (data) {
-        next(new ConflictError('Пользователь с такой почтой уже существует'));
+        return next(new ConflictError('Пользователь с такой почтой уже существует'));
       }
       return User.findByIdAndUpdate(
         req.user._id,
@@ -47,27 +47,32 @@ module.exports.updateUser = (req, res, next) => {
 module.exports.createUser = (req, res, next) => {
   const { email, name, password } = req.body;
 
-  bcrypt.hash(password, 10)
-    .then((hash) => User.create({
-      name,
-      email,
-      password: hash,
-    }))
-    .then((user) => {
-      res.status(201).send({
-        name: user.name,
-        email: user.email,
-        _id: user._id,
-      });
-    })
-    .catch((err) => {
-      if (err.code === 11000) {
-        next(new ConflictError('Пользователь с таким email уже зарегистрирован'));
-      } else if (err.name === 'ValidationError') {
-        next(new BadRequestError('Переданы некорректные данные при создании пользователя'));
+  User.findOne({ email })
+    .then((data) => {
+      if (data) {
+        return next(new ConflictError('Пользователь с таким email уже зарегистрирован'));
       }
-      next(err);
-    });
+      return bcrypt.hash(password, 10)
+        .then((hash) => User.create({
+          name,
+          email,
+          password: hash,
+        }))
+        .then((user) => {
+          res.status(201).send({
+            name: user.name,
+            email: user.email,
+            _id: user._id,
+          });
+        })
+        .catch((err) => {
+          if (err.name === 'ValidationError') {
+            next(new BadRequestError('Переданы некорректные данные при создании пользователя'));
+          }
+          next(err);
+        });
+    })
+    .catch(next);
 };
 
 module.exports.login = (req, res, next) => {

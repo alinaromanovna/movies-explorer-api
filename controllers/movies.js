@@ -4,9 +4,10 @@ const NotFoundError = require('../errors/not_found');
 const ForbiddenError = require('../errors/forbidden');
 
 module.exports.getMovies = (req, res, next) => {
-  Movie.findById(req.params._id)
-    .then((user) => {
-      res.status(200).send(user);
+  const owner = req.user._id;
+  Movie.find({ owner })
+    .then((movies) => {
+      res.status(200).send(movies);
     })
     .catch(next);
 };
@@ -19,9 +20,9 @@ module.exports.createMovie = (req, res, next) => {
     year,
     description,
     image,
-    trailer,
-    nameRu,
-    nameEn,
+    trailerLink,
+    nameRU,
+    nameEN,
     thumbnail,
     movieId,
   } = req.body;
@@ -34,9 +35,9 @@ module.exports.createMovie = (req, res, next) => {
     year,
     description,
     image,
-    trailer,
-    nameRu,
-    nameEn,
+    trailerLink,
+    nameRU,
+    nameEN,
     thumbnail,
     movieId,
     owner,
@@ -55,20 +56,23 @@ module.exports.createMovie = (req, res, next) => {
 module.exports.deleteMovie = (req, res, next) => {
   const { movieId } = req.params;
   Movie.findById(movieId)
-    .orFail(() => new NotFoundError('Пользователь по указанному id не найден.'))
+    .orFail(() => new NotFoundError('Фильм по указанному id не найден.'))
     .then((movie) => {
       if (movie.owner.toString() !== req.user._id) {
         return next(new ForbiddenError('У Вас нет прав для удаления карточки'));
       }
       return Movie.findByIdAndRemove(movieId)
         .then((deleteMovie) => {
-          res.status(200).send({ message: `Фильм ${deleteMovie} удален` });
+          res.status(200).send({ message: `Фильм ${deleteMovie.nameRU} удален` });
         })
         .catch((err) => {
-          if (err.name === 'CastError') {
-            next(new BadRequestError('Переданы некорректные данные'));
-          }
+          next(err);
         });
     })
-    .catch(next);
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        next(new BadRequestError('Переданы некорректные данные'));
+      }
+      next(err);
+    });
 };
